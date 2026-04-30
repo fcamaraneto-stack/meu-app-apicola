@@ -1,0 +1,35 @@
+{
+  "name": "Capacidade Apícola — Caatinga",
+  "short_name": "Cap. Apícola",
+  "description": "Calculadora de capacidade apícola sustentável baseada no modelo EMBRAPA para o bioma Caatinga. Calcule quantas colônias de Apis mellifera seu apiário pode suportar.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F1E9",
+  "theme_color": "#6B3A1F",
+  "orientation": "portrait",
+  "categories": ["agriculture", "utilities", "education"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "author": "Câmara Neto; F.G. — Engenheiro Agrônomo, Desenvolvedor Web. Todos os direitos reservados.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

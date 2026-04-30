@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- [FIX P08] Removido maximum-scale e user-scalable=no para permitir zoom de acessibilidade -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6B3A1F">
+  <!-- [FIX P02] Meta tag de autoria -->
+  <meta name="author" content="Câmara Neto; F.G. — Engenheiro Agrônomo, Desenvolvedor Web. Todos os direitos reservados.">
+  <!-- [FIX P06] Meta tags SEO -->
+  <meta name="description" content="Calculadora de capacidade apícola sustentável baseada no modelo EMBRAPA para o bioma Caatinga. Descubra quantas colônias de Apis mellifera seu apiário pode suportar.">
+  <meta name="keywords" content="apicultura, caatinga, EMBRAPA, capacidade apícola, colônias, abelhas, Apis mellifera, semiárido, Rio Grande do Norte">
+  <!-- [FIX P06] Open Graph -->
+  <meta property="og:title" content="Capacidade Apícola — Caatinga">
+  <meta property="og:description" content="Calculadora de capacidade apícola sustentável baseada no modelo EMBRAPA para o bioma Caatinga.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <!-- [FIX P06] Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐝</text></svg>">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- [FIX P03] Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+  <title>Capacidade Apícola — Caatinga</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <style>
+    :root{--bg:#F6F1E9;--bg-warm:#EDE6D8;--surface:#FFF;--surface-alt:#FAF7F0;--primary:#7B3F1D;--primary-dark:#5C2E14;--primary-light:#C4835A;--primary-pale:#F0DDD0;--accent:#D4A017;--accent-light:#F5E6B8;--accent-dark:#A67C10;--success:#2D7D46;--success-light:#D6F0DE;--danger:#B33A2B;--danger-light:#FCDDD9;--text:#2A1A0E;--text-secondary:#6B5B4D;--text-muted:#9A8B7A;--border:#DDD3C4;--border-light:#EDE8DF;--wa-green:#25D366;--wa-dark:#128C7E;--pdf-brown:#6B3A1F;--sp-xs:4px;--sp-sm:8px;--sp-md:16px;--sp-lg:24px;--sp-xl:32px;--r-sm:6px;--r-md:10px;--r-lg:16px;--r-pill:999px;--shadow-sm:0 1px 3px rgba(42,26,14,.06);--shadow-md:0 4px 12px rgba(42,26,14,.08);--shadow-lg:0 12px 40px rgba(42,26,14,.12);--font-display:'DM Serif Display',Georgia,serif;--font-body:'Source Serif 4',Georgia,serif;--font-mono:'DM Mono','Courier New',monospace;--dur-fast:.2s;--dur-med:.35s;--dur-slow:.5s;--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.56,.64,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.6;min-height:100dvh;overflow-x:hidden}
+    #app{display:flex;flex-direction:column;min-height:100dvh;max-width:640px;margin:0 auto}
+    .app-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:var(--sp-md) var(--sp-lg) 0;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-lg)}
+    .brand{display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md)}
+    .brand-icon{font-size:1.8rem}
+    .brand-title{font-family:var(--font-display);font-size:1.25rem;line-height:1.2}
+    .brand-sub{font-family:var(--font-mono);font-size:.65rem;opacity:.7;letter-spacing:.06em;text-transform:uppercase}
+    .stepper{display:flex;align-items:center;justify-content:center;padding-bottom:var(--sp-md);overflow-x:auto;scrollbar-width:none}
+    .stepper::-webkit-scrollbar{display:none}
+    .step{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;opacity:.4;transition:opacity var(--dur-med)}
+    .step.active,.step.completed{opacity:1}
+    .step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.7rem;font-weight:500;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);transition:all var(--dur-med)}
+    .step.active .step-num{background:var(--accent);border-color:var(--accent);color:var(--primary-dark);box-shadow:0 0 12px rgba(212,160,23,.5)}
+    .step.completed .step-num{background:var(--success);border-color:var(--success)}
+    .step-label{font-family:var(--font-mono);font-size:.55rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+    .step-line{flex:1;height:2px;min-width:12px;max-width:32px;background:rgba(255,255,255,.15);margin:0 2px;margin-bottom:18px}
+    .step-line.filled{background:var(--success)}
+    .screen{display:none;animation:fadeSlideUp var(--dur-slow) var(--ease-out)}
+    .screen.active{display:block}
+    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .screen-inner{padding:var(--sp-lg);padding-bottom:100px}
+    .screen-header{margin-bottom:var(--sp-xl)}
+    .screen-header h2{font-family:var(--font-display);font-size:1.5rem;color:var(--primary-dark);margin-bottom:var(--sp-xs)}
+    .screen-header p{color:var(--text-secondary);font-size:.9rem}
+    .form-group{margin-bottom:var(--sp-lg)}
+    .form-group label{display:block;font-family:var(--font-mono);font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);margin-bottom:var(--sp-xs)}
+    .req{color:var(--danger)}
+    .form-group input[type="text"],.form-group input[type="number"]{width:100%;padding:12px 14px;font-family:var(--font-body);font-size:1rem;color:var(--text);background:var(--surface);border:2px solid var(--border);border-radius:var(--r-md);outline:none;transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+    .form-group input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px var(--primary-pale)}
+    .form-group input.error{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-light)}
+    .field-error{display:block;font-size:.75rem;color:var(--danger);margin-top:4px;min-height:1em}
+    .form-row{display:flex;gap:var(--sp-md)}
+    .form-row .form-group{flex:1}.form-row .flex-2{flex:2}.form-row .flex-1{flex:1}
+    .radio-group{display:flex;gap:var(--sp-sm)}
+    .radio-card{flex:1;cursor:pointer}.radio-card input{display:none}
+    .radio-body{display:block;text-align:center;padding:12px 8px;font-family:var(--font-mono);font-size:.85rem;font-weight:500;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-md);transition:all var(--dur-fast)}
+    .radio-card input:checked+.radio-body{border-color:var(--primary);background:var(--primary-pale);color:var(--primary-dark);box-shadow:var(--shadow-sm)}
+    .radio-body:hover{border-color:var(--primary-light)}
+    .map-wrapper{position:relative;margin-bottom:var(--sp-lg);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-md)}
+    .map-container{width:100%;height:320px;background:var(--bg-warm);z-index:1}
+    .map-overlay-controls{position:absolute;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:6px}
+    .btn-map{padding:8px 12px;font-family:var(--font-mono);font-size:.7rem;font-weight:500;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;box-shadow:var(--shadow-sm);transition:all var(--dur-fast);white-space:nowrap}
+    .btn-map:hover{background:var(--primary-pale);border-color:var(--primary-light)}
+    .btn-map.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .map-legend{position:absolute;bottom:8px;left:10px;z-index:1000;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);padding:6px 12px;border-radius:var(--r-sm);font-family:var(--font-mono);font-size:.65rem;color:var(--text-secondary);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm)}
+    .legend-item{display:flex;align-items:center;gap:4px}
+    .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+    .legend-dot.filled{background:var(--primary);border:2px solid var(--primary)}
+    .legend-dot.outline{background:transparent;border:2px dashed var(--primary-light)}
+    .hive-marker-container{position:relative;width:32px;height:50px}
+    .hive-marker-dot{width:28px;height:28px;background:var(--primary);border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);position:absolute;top:0;left:2px;display:flex;align-items:center;justify-content:center;font-size:13px}
+    .hive-marker-pin{width:2px;height:18px;background:var(--primary);position:absolute;bottom:0;left:15px;border-radius:1px}
+    .apiary-label{position:absolute;top:10px;left:10px;z-index:1000;background:rgba(123,63,29,.92);backdrop-filter:blur(8px);color:#fff;padding:8px 14px;border-radius:var(--r-md);font-family:var(--font-display);font-size:.85rem;box-shadow:var(--shadow-md);max-width:200px;line-height:1.3;pointer-events:none}
+    .apiary-label small{display:block;font-family:var(--font-mono);font-size:.6rem;opacity:.8;margin-top:2px}
+    .info-box{background:var(--accent-light);border:1px solid var(--accent);border-radius:var(--r-md);padding:var(--sp-md);font-family:var(--font-mono);font-size:.85rem;color:var(--accent-dark)}
+    .info-box.info-blue{background:#E8F0FE;border-color:#4A90D9;color:#2B5A8C}
+    .slider-group{margin-bottom:var(--sp-lg)}
+    .slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-sm)}
+    .slider-header label{font-family:var(--font-mono);font-size:.8rem;color:var(--text-secondary)}
+    .slider-val{font-family:var(--font-mono);font-size:.85rem;font-weight:500;color:var(--primary);min-width:36px;text-align:right}
+    .styled-range{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:4px;background:var(--border-light);outline:none}
+    .styled-range::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform var(--dur-fast) var(--ease-spring)}
+    .styled-range::-webkit-slider-thumb:hover{transform:scale(1.15)}
+    .styled-range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+    .styled-range.preservada::-webkit-slider-thumb,.styled-range.preservada::-moz-range-thumb{background:#2D7D46}
+    .styled-range.capoeira::-webkit-slider-thumb,.styled-range.capoeira::-moz-range-thumb{background:#6AAF35}
+    .styled-range.agricultura::-webkit-slider-thumb,.styled-range.agricultura::-moz-range-thumb{background:#D4A017}
+    .styled-range.pasto::-webkit-slider-thumb,.styled-range.pasto::-moz-range-thumb{background:#B07840}
+    .total-bar{position:relative;height:36px;background:var(--border-light);border-radius:var(--r-pill);overflow:hidden;margin-bottom:var(--sp-xl);border:2px solid var(--border);transition:border-color var(--dur-fast)}
+    .total-bar.valid{border-color:var(--success)}.total-bar.invalid{border-color:var(--danger)}
+    .total-fill{height:100%;width:0%;border-radius:var(--r-pill);transition:width var(--dur-med) var(--ease-out),background var(--dur-med);background:linear-gradient(90deg,#2D7D46,#6AAF35)}
+    .total-bar.invalid .total-fill{background:linear-gradient(90deg,#D4880F,#B33A2B)}
+    .total-bar.over .total-fill{background:var(--danger)}
+    .total-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.8rem;font-weight:500;z-index:1}
+    .validation-msg{padding:var(--sp-sm) var(--sp-md);border-radius:var(--r-sm);font-size:.85rem;font-family:var(--font-mono);margin-top:var(--sp-md);display:none}
+    .validation-msg.show{display:block;animation:shake .4s var(--ease-out)}
+    .validation-msg.error{background:var(--danger-light);color:var(--danger);border:1px solid var(--danger)}
+    .validation-msg.success{background:var(--success-light);color:var(--success);border:1px solid var(--success)}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+    .species-controls{display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-md);flex-wrap:wrap}
+    .btn-species-action{padding:6px 14px;font-family:var(--font-mono);font-size:.7rem;font-weight:500;border:2px solid var(--border);border-radius:var(--r-pill);background:var(--surface);cursor:pointer;transition:all var(--dur-fast);color:var(--text-secondary)}
+    .btn-species-action:hover{border-color:var(--primary-light);color:var(--primary)}
+    .btn-species-action.deselect-all{border-color:var(--danger-light);color:var(--danger)}
+    .btn-species-action.deselect-all:hover{background:var(--danger-light)}
+    .species-search{width:100%;padding:10px 14px;font-family:var(--font-body);font-size:.9rem;color:var(--text);background:var(--surface);border:2px solid var(--border);border-radius:var(--r-md);outline:none;margin-bottom:var(--sp-md);transition:border-color var(--dur-fast)}
+    .species-search:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px var(--primary-pale)}
+    .species-count-bar{background:var(--primary-pale);border:1px solid var(--primary-light);border-radius:var(--r-md);padding:var(--sp-sm) var(--sp-md);font-family:var(--font-mono);font-size:.8rem;color:var(--primary-dark);margin-bottom:var(--sp-lg);text-align:center}
+    .species-category{margin-bottom:var(--sp-lg)}
+    .species-category-title{font-family:var(--font-mono);font-size:.7rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:var(--sp-sm);padding-bottom:var(--sp-xs);border-bottom:1px solid var(--border-light)}
+    .species-grid{display:grid;grid-template-columns:1fr;gap:6px}
+    .species-card{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:2px solid var(--border-light);border-radius:var(--r-md);cursor:pointer;transition:all var(--dur-fast) var(--ease-out);user-select:none;-webkit-tap-highlight-color:transparent}
+    .species-card:hover{border-color:var(--primary-light);box-shadow:var(--shadow-sm);transform:translateX(2px)}
+    .species-card.selected{border-color:var(--success);background:var(--success-light);box-shadow:0 0 0 1px var(--success)}
+    .species-card.hidden{display:none}
+    .species-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--dur-fast);font-size:.8rem;color:transparent;background:var(--surface)}
+    .species-card.selected .species-check{background:var(--success);border-color:var(--success);color:#fff}
+    .species-info{flex:1;min-width:0}
+    .species-name{font-family:var(--font-body);font-size:.9rem;font-weight:600;color:var(--text);line-height:1.3}
+    .species-scientific{font-family:var(--font-body);font-style:italic;font-size:.7rem;color:var(--text-muted);line-height:1.2}
+    .species-iae{font-family:var(--font-mono);font-size:.65rem;color:var(--primary);background:var(--primary-pale);padding:2px 8px;border-radius:var(--r-pill);flex-shrink:0}
+    .month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-sm);margin-bottom:var(--sp-xl)}
+    .month-btn{padding:14px 8px;font-family:var(--font-mono);font-size:.8rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-md);cursor:pointer;transition:all var(--dur-fast);color:var(--text-secondary)}
+    .month-btn:hover{border-color:var(--primary-light);color:var(--primary)}
+    .month-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:var(--shadow-sm)}
+    .sf-display{text-align:center;padding:var(--sp-lg);background:var(--surface-alt);border:2px solid var(--border-light);border-radius:var(--r-lg)}
+    .sf-value{font-family:var(--font-display);font-size:2rem;color:var(--primary-dark)}
+    .sf-detail{font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted);margin-top:var(--sp-xs)}
+    .result-banner{text-align:center;margin-bottom:var(--sp-xl)}
+    .result-banner h2{font-family:var(--font-display);font-size:1.6rem;color:var(--primary-dark)}
+    .result-date{font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted);margin-top:var(--sp-xs)}
+    .gauge-section{display:flex;flex-direction:column;align-items:center;margin-bottom:var(--sp-xl)}
+    .gauge-ring{position:relative;width:160px;height:160px}
+    .gauge-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+    .gauge-bg{fill:none;stroke:var(--border-light);stroke-width:8}
+    .gauge-fill{fill:none;stroke:var(--primary);stroke-width:8;stroke-linecap:round;stroke-dasharray:326.73;stroke-dashoffset:326.73;transition:stroke-dashoffset 1.2s var(--ease-out),stroke .5s}
+    .gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .gauge-number{font-family:var(--font-display);font-size:2rem;color:var(--primary-dark);line-height:1}
+    .gauge-text{font-family:var(--font-mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)}
+    .gauge-classification{font-family:var(--font-mono);font-size:.9rem;font-weight:500;padding:6px 20px;border-radius:var(--r-pill);margin-top:var(--sp-md)}
+    .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-md);margin-bottom:var(--sp-xl)}
+    .metric-card{background:var(--surface);border:2px solid var(--border-light);border-radius:var(--r-lg);padding:var(--sp-lg) var(--sp-md);text-align:center;box-shadow:var(--shadow-sm);transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-fast)}
+    .metric-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .metric-card.accent{background:var(--accent-light);border-color:var(--accent)}
+    .metric-icon{font-size:1.6rem;margin-bottom:var(--sp-sm)}
+    .metric-value{font-family:var(--font-display);font-size:1.4rem;color:var(--primary-dark);line-height:1.2}
+    .metric-label{font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:var(--sp-xs)}
+    .capacity-analysis{margin-bottom:var(--sp-xl);border-radius:var(--r-lg);overflow:hidden;border:2px solid var(--border-light);box-shadow:var(--shadow-md)}
+    .cap-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:var(--sp-md) var(--sp-lg);text-align:center}
+    .cap-header h3{font-family:var(--font-display);font-size:1.1rem;font-weight:400}
+    .cap-header small{font-family:var(--font-mono);font-size:.65rem;opacity:.7;display:block;margin-top:2px}
+    .cap-body{background:var(--surface);padding:var(--sp-lg)}
+    .cap-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light)}
+    .cap-row:last-child{border-bottom:none}
+    .cap-row-label{font-family:var(--font-mono);font-size:.78rem;color:var(--text-secondary)}
+    .cap-row-value{font-family:var(--font-mono);font-size:.95rem;font-weight:500;color:var(--primary-dark)}
+    .cap-divider{height:2px;background:var(--border-light);margin:var(--sp-sm) 0}
+    .cap-verdict{padding:var(--sp-md);text-align:center;font-family:var(--font-mono);font-size:.85rem;font-weight:500;border-radius:var(--r-md);margin-top:var(--sp-md);line-height:1.5}
+    .cap-verdict.positive{background:var(--success-light);color:var(--success);border:1px solid var(--success)}
+    .cap-verdict.negative{background:var(--danger-light);color:var(--danger);border:1px solid var(--danger)}
+    .cap-verdict.neutral{background:var(--accent-light);color:var(--accent-dark);border:1px solid var(--accent)}
+    .cap-verdict-icon{font-size:1.4rem;display:block;margin-bottom:4px}
+    .params-table{margin-bottom:var(--sp-xl)}
+    .params-table h3{font-family:var(--font-display);font-size:1.1rem;color:var(--primary-dark);margin-bottom:var(--sp-md)}
+    .params-table table{width:100%;border-collapse:collapse}
+    .params-table tr{border-bottom:1px solid var(--border-light)}
+    .params-table td{padding:10px 0;font-size:.9rem}
+    .params-table td:first-child{color:var(--text-secondary)}
+    .params-table td:last-child{font-family:var(--font-mono);font-weight:500;text-align:right;color:var(--primary-dark)}
+    .diagnosis-box{background:var(--surface-alt);border:2px solid var(--border-light);border-radius:var(--r-lg);padding:var(--sp-lg);margin-bottom:var(--sp-xl)}
+    .diagnosis-box h3{font-family:var(--font-display);font-size:1.1rem;color:var(--primary-dark);margin-bottom:var(--sp-md)}
+    .diagnosis-box ul{list-style:none;padding:0}
+    .diagnosis-box li{position:relative;padding-left:20px;margin-bottom:var(--sp-sm);font-size:.9rem;color:var(--text-secondary);line-height:1.5}
+    .diagnosis-box li::before{content:'▸';position:absolute;left:0;color:var(--primary-light);font-weight:bold}
+    .export-section{padding-top:var(--sp-lg);border-top:2px solid var(--border-light)}
+    .export-section h3{font-family:var(--font-display);font-size:1.1rem;color:var(--primary-dark);margin-bottom:var(--sp-lg);text-align:center}
+    .export-buttons{display:flex;gap:var(--sp-md)}
+    .btn-export{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--sp-sm);padding:16px var(--sp-md);font-family:var(--font-mono);font-size:.8rem;font-weight:500;border:none;border-radius:var(--r-lg);cursor:pointer;transition:all var(--dur-fast) var(--ease-out);box-shadow:var(--shadow-md);letter-spacing:.02em}
+    .btn-export:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+    .btn-export:active{transform:translateY(0)}
+    .btn-whatsapp{background:var(--wa-green);color:#fff}.btn-whatsapp:hover{background:var(--wa-dark)}
+    .btn-pdf{background:var(--pdf-brown);color:#fff}.btn-pdf:hover{background:#5C2E14}
+    .btn-icon{font-size:1.2rem}
+    .nav-footer{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:640px;display:flex;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border-top:1px solid var(--border-light);box-shadow:0 -4px 20px rgba(42,26,14,.08);z-index:100}
+    .btn-nav{flex:1;padding:14px;font-family:var(--font-mono);font-size:.85rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;border:2px solid var(--border);border-radius:var(--r-md);cursor:pointer;transition:all var(--dur-fast)}
+    .btn-back{background:var(--surface);color:var(--text-secondary)}
+    .btn-back:hover:not(:disabled){border-color:var(--primary-light);color:var(--primary)}
+    .btn-back:disabled{opacity:.35;cursor:not-allowed}
+    .btn-next{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn-next:hover{background:var(--primary-dark);border-color:var(--primary-dark)}
+    .btn-next:active{transform:scale(.98)}
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);max-width:400px;width:calc(100% - 40px);padding:14px 20px;font-family:var(--font-mono);font-size:.8rem;border-radius:var(--r-md);box-shadow:var(--shadow-lg);z-index:9999;opacity:0;pointer-events:none;transition:all var(--dur-med) var(--ease-spring);text-align:center}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+    .toast.error{background:var(--danger);color:#fff}.toast.success{background:var(--success);color:#fff}.toast.info{background:var(--primary);color:#fff}
+    /* [FIX P02] Barra de copyright */
+    .copyright-bar{text-align:center;padding:var(--sp-sm) var(--sp-lg);padding-bottom:calc(var(--sp-sm) + 70px);font-family:var(--font-mono);font-size:.65rem;color:var(--text-muted);line-height:1.6;background:var(--bg)}
+    .copyright-bar strong{color:var(--text-secondary)}
+    /* [FIX P08] Focus visible para acessibilidade */
+    .species-card:focus-visible,.btn-map:focus-visible,.btn-nav:focus-visible,.btn-export:focus-visible,.month-btn:focus-visible,.btn-species-action:focus-visible{outline:3px solid var(--primary-light);outline-offset:2px}
+    input:focus-visible{outline:none}
+    @media(max-width:400px){.screen-inner{padding:var(--sp-md);padding-bottom:100px}.form-row{flex-direction:column;gap:0}.radio-group{flex-direction:column}.export-buttons{flex-direction:column}.metrics-grid{grid-template-columns:1fr}.month-grid{grid-template-columns:repeat(3,1fr)}.brand-title{font-size:1.05rem}.step-label{font-size:.5rem}.gauge-ring{width:130px;height:130px}.gauge-number{font-size:1.6rem}}
+    @media(min-width:641px){#app{box-shadow:0 0 60px rgba(42,26,14,.08)}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="brand"><span class="brand-icon">🐝</span><div><h1 class="brand-title">Capacidade Apícola</h1><p class="brand-sub">Modelo Adaptado — Caatinga</p></div></div>
+    <nav class="stepper" id="stepper">
+      <div class="step active" data-step="0"><span class="step-num">1</span><span class="step-label">Apicultor</span></div><div class="step-line"></div>
+      <div class="step" data-step="1"><span class="step-num">2</span><span class="step-label">Local</span></div><div class="step-line"></div>
+      <div class="step" data-step="2"><span class="step-num">3</span><span class="step-label">Cobertura</span></div><div class="step-line"></div>
+      <div class="step" data-step="3"><span class="step-num">4</span><span class="step-label">Flora</span></div><div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">5</span><span class="step-label">Sazonal</span></div><div class="step-line"></div>
+      <div class="step" data-step="5"><span class="step-num">6</span><span class="step-label">Resultado</span></div>
+    </nav>
+  </header>
+  <main>
+    <section id="scr0" class="screen active"><div class="screen-inner">
+      <div class="screen-header"><h2>Dados do Apicultor</h2><p>Preencha as informações do produtor, apiário e propriedade.</p></div>
+      <div class="form-group"><label>Nome Completo <span class="req">*</span></label><input type="text" id="inpNome" placeholder="Ex: José da Silva"><span class="field-error" id="errNome"></span></div>
+      <div class="form-group"><label>Nome do Apiário <span class="req">*</span></label><input type="text" id="inpApiario" placeholder="Ex: Apiário Boa Vista"><span class="field-error" id="errApiario"></span></div>
+      <div class="form-group"><label>Nome da Propriedade <span class="req">*</span></label><input type="text" id="inpPropriedade" placeholder="Ex: Sítio Boa Vista"><span class="field-error" id="errPropriedade"></span></div>
+      <div class="form-group"><label>Comunidade / Assentamento</label><input type="text" id="inpComunidade" placeholder="Ex: Assentamento X"></div>
+      <div class="form-row"><div class="form-group flex-2"><label>Município <span class="req">*</span></label><input type="text" id="inpMunicipio" placeholder="Ex: Frutuoso Gomes"><span class="field-error" id="errMunicipio"></span></div><div class="form-group flex-1"><label>UF <span class="req">*</span></label><input type="text" id="inpUF" maxlength="2" placeholder="RN" style="text-transform:uppercase"><span class="field-error" id="errUF"></span></div></div>
+      <div class="form-group"><label>Tamanho da Propriedade (hectares)</label><input type="number" id="inpArea" step="0.1" min="0" placeholder="Ex: 50.0"></div>
+    </div></section>
+
+    <section id="scr1" class="screen"><div class="screen-inner">
+      <div class="screen-header"><h2>Localização e Colônias</h2><p>Capture o GPS, defina o raio e informe as colônias existentes.</p></div>
+      <div class="map-wrapper">
+        <div id="mapa" class="map-container"></div>
+        <div class="apiary-label"><span id="apiaryMapName">Apiário</span><small>Raio de forrageamento</small></div>
+        <div class="map-overlay-controls"><button id="btnGPS" class="btn-map" type="button">📡 GPS</button><button id="btnSatelite" class="btn-map" type="button">🛰️ Satélite</button></div>
+        <div class="map-legend"><span class="legend-item"><span class="legend-dot filled"></span> Centro</span><span class="legend-item"><span class="legend-dot outline"></span> Raio de voo</span></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label>Latitude</label><input type="number" id="inpLat" step="0.000001" placeholder="-5.7945"></div><div class="form-group"><label>Longitude</label><input type="number" id="inpLng" step="0.000001" placeholder="-35.2110"></div></div>
+      <div class="form-group"><label>Raio de Forrageamento</label><div class="radio-group"><label class="radio-card"><input type="radio" name="raio" value="1.5" checked><span class="radio-body">1,5 km</span></label><label class="radio-card"><input type="radio" name="raio" value="2"><span class="radio-body">2,0 km</span></label><label class="radio-card"><input type="radio" name="raio" value="3"><span class="radio-body">3,0 km</span></label></div></div>
+      <div class="info-box" style="margin-bottom:24px"><strong>Área de forrageamento:</strong> <span id="spanAreaForr">706,9 ha</span></div>
+      <div class="form-group"><label>🏠 Colônias atuais no seu apiário</label><input type="number" id="inpColAtual" min="0" step="1" value="0" placeholder="Ex: 10"></div>
+      <div class="form-group"><label>🏘️ Colônias de outros apiários no raio de forrageamento</label><input type="number" id="inpColOutros" min="0" step="1" value="0" placeholder="Ex: 30"></div>
+      <div class="info-box info-blue"><strong>Total atual na área:</strong> <span id="totalColAtual">0</span> colônias<br><small>O sistema calculará quantas colônias podem ser adicionadas ou redistribuídas.</small></div>
+    </div></section>
+
+    <section id="scr2" class="screen"><div class="screen-inner">
+      <div class="screen-header"><h2>Cobertura Vegetal</h2><p>Ajuste os percentuais. <strong>Pastagem não conta</strong> como cobertura apícola.</p></div>
+      <div class="total-bar" id="totalBar"><div class="total-fill" id="totalFill"></div><span class="total-text" id="totalText">Total: 0%</span></div>
+      <div class="slider-group"><div class="slider-header"><label>🌳 Caatinga Preservada</label><span class="slider-val" id="valPreservada">0%</span></div><input type="range" id="cvPreservada" min="0" max="100" value="0" class="styled-range preservada"></div>
+      <div class="slider-group"><div class="slider-header"><label>🌿 Capoeira (Secundária)</label><span class="slider-val" id="valCapoeira">0%</span></div><input type="range" id="cvCapoeira" min="0" max="100" value="0" class="styled-range capoeira"></div>
+      <div class="slider-group"><div class="slider-header"><label>🌾 Agricultura</label><span class="slider-val" id="valAgricultura">0%</span></div><input type="range" id="cvAgricultura" min="0" max="100" value="0" class="styled-range agricultura"></div>
+      <div class="slider-group"><div class="slider-header"><label>🐄 Pastagem (excluída do CV)</label><span class="slider-val" id="valPasto">0%</span></div><input type="range" id="cvPasto" min="0" max="100" value="0" class="styled-range pasto"></div>
+      <div class="info-box"><strong>CV apícola:</strong> <span id="cvDisplay">0%</span> (Preservada + Capoeira + Agricultura)</div>
+      <div class="validation-msg" id="msgCobertura"></div>
+    </div></section>
+
+    <section id="scr3" class="screen"><div class="screen-inner">
+      <div class="screen-header"><h2>Flora Apícola da Caatinga</h2><p>Toque nas espécies presentes. IAE escala 1–5.</p></div>
+      <input type="text" class="species-search" id="speciesSearch" placeholder="🔍 Buscar espécie...">
+      <div class="species-controls"><button type="button" class="btn-species-action" id="btnSelectAll">Selecionar visíveis</button><button type="button" class="btn-species-action deselect-all" id="btnDeselectAll">Limpar</button></div>
+      <div class="species-count-bar"><span id="speciesCount">0</span> espécie(s) — IAE: <span id="iaeDisplay">0,00</span></div>
+      <div id="speciesContainer"></div>
+      <div class="validation-msg" id="msgFlora"></div>
+    </div></section>
+
+    <section id="scr4" class="screen"><div class="screen-inner">
+      <div class="screen-header"><h2>Sazonalidade</h2><p>Selecione os meses com floração significativa.</p></div>
+      <div class="month-grid" id="monthGrid">
+        <button type="button" class="month-btn" data-month="0">Jan</button><button type="button" class="month-btn" data-month="1">Fev</button><button type="button" class="month-btn" data-month="2">Mar</button><button type="button" class="month-btn" data-month="3">Abr</button><button type="button" class="month-btn" data-month="4">Mai</button><button type="button" class="month-btn" data-month="5">Jun</button><button type="button" class="month-btn" data-month="6">Jul</button><button type="button" class="month-btn" data-month="7">Ago</button><button type="button" class="month-btn" data-month="8">Set</button><button type="button" class="month-btn" data-month="9">Out</button><button type="button" class="month-btn" data-month="10">Nov</button><button type="button" class="month-btn" data-month="11">Dez</button>
+      </div>
+      <div class="sf-display"><div class="sf-value">SF = <span id="sfValue">0,00</span></div><div class="sf-detail">(<span id="sfMonths">0</span> de 12 meses)</div></div>
+      <div class="validation-msg" id="msgSazonal"></div>
+    </div></section>
+
+    <section id="scr5" class="screen"><div class="screen-inner" id="resultadoContainer">
+      <div class="result-banner"><h2>Resultado da Análise</h2><p class="result-date" id="resultDate"></p></div>
+      <div class="gauge-section">
+        <div class="gauge-ring"><svg viewBox="0 0 120 120"><circle class="gauge-bg" cx="60" cy="60" r="52"/><circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="52"/></svg><div class="gauge-center"><span class="gauge-number" id="gaugeNC">0</span><span class="gauge-text">COLÔNIAS</span></div></div>
+        <div class="gauge-classification" id="gaugeClass">—</div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-icon">📐</div><div class="metric-value" id="metICA">0</div><div class="metric-label">ICA</div></div>
+        <div class="metric-card"><div class="metric-icon">📊</div><div class="metric-value" id="metCapOp">0 – 0</div><div class="metric-label">Faixa Operacional</div></div>
+        <div class="metric-card accent"><div class="metric-icon">🍯</div><div class="metric-value" id="metProducao">0 kg</div><div class="metric-label">Produção / ano</div></div>
+        <div class="metric-card"><div class="metric-icon">📏</div><div class="metric-value" id="metArea">0 ha</div><div class="metric-label">Área (AU)</div></div>
+      </div>
+      <div class="capacity-analysis"><div class="cap-header"><h3>📊 Análise de Capacidade</h3><small>Situação atual vs. capacidade recomendada</small></div><div class="cap-body" id="capBody"></div></div>
+      <div class="params-table"><h3>Parâmetros Técnicos</h3><table>
+        <tr><td>Área Circular (AU)</td><td id="resAU">—</td></tr>
+        <tr><td>Cobertura Apícola (CV)</td><td id="resCV">—</td></tr>
+        <tr><td>IAE Médio (1–5)</td><td id="resIAE">—</td></tr>
+        <tr><td>Sazonalidade (SF)</td><td id="resSF">—</td></tr>
+        <tr><td>ICA</td><td id="resICA">—</td></tr>
+        <tr><td>Colônias Máx. (NC)</td><td id="resNC">—</td></tr>
+        <tr><td>Fator EMBRAPA</td><td>8</td></tr>
+        <tr><td>Produção/colônia</td><td>25 kg/ano</td></tr>
+      </table></div>
+      <div class="diagnosis-box"><h3>Diagnóstico e Sugestões</h3><div id="diagnosisContent"></div></div>
+      <div class="export-section"><h3>Exportar Relatório</h3><div class="export-buttons">
+        <button id="btnWhatsApp" class="btn-export btn-whatsapp" type="button"><span class="btn-icon">💬</span><span>WhatsApp</span></button>
+        <button id="btnPDF" class="btn-export btn-pdf" type="button"><span class="btn-icon">📄</span><span>Baixar PDF</span></button>
+      </div></div>
+    </div></section>
+  </main>
+  <!-- [FIX P02] Barra de copyright visível -->
+  <div class="copyright-bar">
+    <strong>© Câmara Neto; F.G.</strong> — Engenheiro Agrônomo, Desenvolvedor Web.<br>Todos os direitos reservados.
+  </div>
+  <footer class="nav-footer">
+    <button id="btnVoltar" class="btn-nav btn-back" type="button" disabled>Voltar</button>
+    <button id="btnProximo" class="btn-nav btn-next" type="button">Próximo</button>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<!-- [FIX P05] Adicionado crossorigin nos scripts de captura/PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin=""></script>
+
+<script>
+try {
+'use strict'; /* [FIX P12] Strict mode ativado */
+
+/* ═══ ESTADO ═══ */
+window.appState = {
+  currentScreen: 0, totalScreens: 6,
+  apicultor: {nome:'',apiario:'',propriedade:'',comunidade:'',municipio:'',uf:'',area:null},
+  localizacao: {lat:null,lng:null,raio:1.5},
+  colonias: {atual:0,outros:0,total:0},
+  cobertura: {preservada:0,capoeira:0,agricultura:0,pasto:0},
+  flora: {especies:[],iae:0},
+  sazonalidade: {meses:[],sf:0}
+};
+window.resultadoAtual = null;
+
+var map = null, marker = null, circle = null, tileOSM = null, tileSat = null, isSatellite = false;
+var selectedSpeciesSet = {};
+
+/* ═══ ESPÉCIES (IAE 1–5 EMBRAPA) ═══ */
+var ESPECIES = [
+  {id:'umbuzeiro',nome:'Umbuzeiro',c:'Spondias tuberosa',iae:5.0,icon:'🌳',cat:'arvore'},
+  {id:'jurema_preta',nome:'Jurema-preta',c:'Mimosa tenuiflora',iae:4.8,icon:'🌿',cat:'arvore'},
+  {id:'angico',nome:'Angico-branco',c:'Anadenanthera colubrina',iae:4.5,icon:'🌳',cat:'arvore'},
+  {id:'catingueira',nome:'Catingueira',c:'Caesalpinia pyramidalis',iae:4.5,icon:'🌳',cat:'arvore'},
+  {id:'pau_ferro',nome:'Pau-ferro',c:'Libidibia ferrea',iae:4.3,icon:'🌳',cat:'arvore'},
+  {id:'juazeiro',nome:'Juazeiro',c:'Ziziphus joazeiro',iae:4.2,icon:'🌳',cat:'arvore'},
+  {id:'aroeira',nome:'Aroeira',c:'Schinus terebinthifolia',iae:4.0,icon:'🌳',cat:'arvore'},
+  {id:'oiticica',nome:'Oiticica',c:'Licania rigida',iae:4.0,icon:'🌳',cat:'arvore'},
+  {id:'marmeleiro',nome:'Marmeleiro',c:'Croton sonderianus',iae:4.0,icon:'🌿',cat:'arvore'},
+  {id:'canafistula',nome:'Canafistula',c:'Peltophorum dubium',iae:3.6,icon:'🌳',cat:'arvore'},
+  {id:'cumaru',nome:'Cumaru',c:'Amburana cearensis',iae:3.5,icon:'🌳',cat:'arvore'},
+  {id:'ipe_roxo',nome:'Ipe-roxo',c:'Handroanthus impetiginosus',iae:3.5,icon:'🌸',cat:'arvore'},
+  {id:'pau_darco',nome:'Pau-darco-amarelo',c:'Handroanthus serratifolius',iae:3.5,icon:'🌼',cat:'arvore'},
+  {id:'imburana',nome:'Imburana-de-cheiro',c:'Commiphora leptophloeos',iae:3.5,icon:'🌳',cat:'arvore'},
+  {id:'aroeira_salso',nome:'Aroeira-salso',c:'Myracrodruon urundeuva',iae:3.5,icon:'🌳',cat:'arvore'},
+  {id:'barauna',nome:'Barauna',c:'Schinopsis brasiliensis',iae:3.2,icon:'🌳',cat:'arvore'},
+  {id:'catanduva',nome:'Catanduva',c:'Piptadenia moniliformis',iae:3.2,icon:'🌳',cat:'arvore'},
+  {id:'carnauba',nome:'Carnauba',c:'Copernicia prunifera',iae:3.0,icon:'🌴',cat:'arvore'},
+  {id:'embiriba',nome:'Embiriba',c:'Eriotheca gracilipes',iae:2.8,icon:'🌳',cat:'arvore'},
+  {id:'mulungu',nome:'Mulungu',c:'Erythrina velutina',iae:3.8,icon:'🌸',cat:'arbusto'},
+  {id:'quixabeira',nome:'Quixabeira',c:'Sideroxylon obtusifolium',iae:3.8,icon:'🌳',cat:'arbusto'},
+  {id:'sabia',nome:'Sabia',c:'Mimosa caesalpiniifolia',iae:3.7,icon:'🌿',cat:'arbusto'},
+  {id:'algarroba',nome:'Algarroba',c:'Prosopis juliflora',iae:3.5,icon:'🌳',cat:'arbusto'},
+  {id:'pereiro',nome:'Pereiro',c:'Aspidosperma pyrifolium',iae:3.0,icon:'🌳',cat:'arbusto'},
+  {id:'mororo',nome:'Mororo',c:'Bauhinia cheilantha',iae:3.0,icon:'🌸',cat:'arbusto'},
+  {id:'velame',nome:'Velame',c:'Croton argyrophyllus',iae:3.0,icon:'🌿',cat:'arbusto'},
+  {id:'feijao_bravo',nome:'Feijao-bravo',c:'Capparis flexuosa',iae:2.8,icon:'🌿',cat:'arbusto'},
+  {id:'manicoba',nome:'Manicoba',c:'Manihot pseudoglaziovii',iae:2.5,icon:'🌿',cat:'arbusto'},
+  {id:'faveleiro',nome:'Faveleiro',c:'Cnidoscolus quercifolius',iae:2.5,icon:'🌿',cat:'arbusto'},
+  {id:'pinhao_bravo',nome:'Pinhao-bravo',c:'Jatropha mollissima',iae:2.5,icon:'🌿',cat:'arbusto'},
+  {id:'flor_seda',nome:'Flor-de-seda',c:'Calotropis procera',iae:3.2,icon:'🌺',cat:'exotica'},
+  {id:'eucalipto',nome:'Eucalipto',c:'Eucalyptus spp.',iae:2.8,icon:'🌲',cat:'exotica'},
+  {id:'mata_fome',nome:'Mata-fome',c:'Sida galheirensis',iae:2.5,icon:'🌿',cat:'exotica'},
+  {id:'carrapateira',nome:'Carrapateira',c:'Jatropha curcas',iae:2.5,icon:'🌿',cat:'exotica'},
+  {id:'assa_peixe',nome:'Assa-peixe',c:'Vernonia polysphaera',iae:2.8,icon:'🌼',cat:'herbacea'},
+  {id:'malva_branca',nome:'Malva-branca',c:'Sida rhombifolia',iae:2.5,icon:'🌼',cat:'herbacea'},
+  {id:'fedegoso',nome:'Fedegoso',c:'Senna occidentalis',iae:2.5,icon:'🌼',cat:'herbacea'},
+  {id:'cidreira',nome:'Cidreira',c:'Hyptis suaveolens',iae:2.2,icon:'🌿',cat:'herbacea'},
+  {id:'mandacaru',nome:'Mandacaru',c:'Cereus jamacaru',iae:3.0,icon:'🌵',cat:'cactacea'},
+  {id:'xique_xique',nome:'Xique-xique',c:'Pilosocereus gounellei',iae:2.8,icon:'🌵',cat:'cactacea'},
+  {id:'facheiro',nome:'Facheiro',c:'Pilosocereus piauhyensis',iae:2.5,icon:'🌵',cat:'cactacea'},
+  {id:'coroa_frade',nome:'Coroa-de-frade',c:'Melocactus zehntneri',iae:1.8,icon:'🌵',cat:'cactacea'},
+  {id:'quipa',nome:'Quipa',c:'Melocactus sp.',iae:1.5,icon:'🌵',cat:'cactacea'},
+  {id:'ouricuri',nome:'Ouricuri',c:'Syagrus coronata',iae:2.8,icon:'🌴',cat:'outras'},
+  {id:'macambira',nome:'Macambira',c:'Bromelia laciniosa',iae:2.0,icon:'🌿',cat:'outras'}
+];
+
+/* ═══ CÁLCULOS EMBRAPA ═══ */
+function calcCV(c){ return c.preservada + c.capoeira + c.agricultura; }
+function calcIAE(ids){
+  if(!ids||!ids.length) return 0;
+  var s=0;
+  for(var i=0;i<ids.length;i++){
+    for(var j=0;j<ESPECIES.length;j++){
+      if(ESPECIES[j].id===ids[i]){ s+=ESPECIES[j].iae; break; }
+    }
+  }
+  return s/ids.length;
+}
+function calcSF(m){ return (!m||!m.length) ? 0 : m.length/12; }
+function calcAU(r){ return Math.PI*r*r*100; }
+function calcICA(au,cv,iae,sf){ return (au*cv*iae*sf)/100; }
+function calcNC(ica){ return Math.floor(ica/8); }
+function calcFaixa(nc){ return {min:Math.round(nc*0.70), max:Math.round(nc*0.85)}; }
+
+function classificar(nc,au){
+  if(au===0) return {texto:'Sem dados',nivel:'sem-dados'};
+  var d=nc/au;
+  if(d>=0.40) return {texto:'Excelente',nivel:'excelente'};
+  if(d>=0.25) return {texto:'Boa',nivel:'boa'};
+  if(d>=0.15) return {texto:'Moderada',nivel:'moderada'};
+  if(d>=0.05) return {texto:'Baixa',nivel:'baixa'};
+  return {texto:'Muito Baixa',nivel:'muito-baixa'};
+}
+
+function gerarDiagnostico(p){
+  var s=[];
+  if(p.cv<30) s.push('Cobertura muito baixa ('+p.cv+'%). Priorize preservacao.');
+  else if(p.cv<50) s.push('Cobertura moderada ('+p.cv+'%). Melhore com capoeiras.');
+  else if(p.cv>=70) s.push('Excelente cobertura ('+p.cv+'%).');
+  if(p.cobertura.pasto>60) s.push('Pastagem predominante reduz recursos florais.');
+  if(p.numEsp<3) s.push('Poucas especies ('+p.numEsp+'). Amplie o levantamento.');
+  if(p.iae<3.0) s.push('IAE baixo ('+p.iae.toFixed(2)+'). Incorpore Umbuzeiro, Jurema, Catingueira.');
+  else if(p.iae>=4.0) s.push('IAE favoravel ('+p.iae.toFixed(2)+').');
+  if(p.sf<0.25) s.push('Sazonalidade acentuada (SF='+p.sf.toFixed(2)+').');
+  else if(p.sf>=0.75) s.push('Boa distribuicao anual (SF='+p.sf.toFixed(2)+').');
+  if(p.nc===0) s.push('Capacidade nula. Revise parametros.');
+  if(p.dif>0) s.push('Espaco para '+p.dif+' colonia(s) adicional(is).');
+  else if(p.dif<0) s.push('Sobrelotada. Redistribuir '+Math.abs(p.dif)+' colonia(s).');
+  if(!s.length) s.push('Condicoes adequadas para o manejo apicola.');
+  return s;
+}
+
+function calcular(d){
+  var au = calcAU(d.raioKm);
+  var cv = calcCV(d.cobertura);
+  var iae = calcIAE(d.especies);
+  var sf = calcSF(d.meses);
+  var ica = calcICA(au,cv,iae,sf);
+  var nc = calcNC(ica);
+  var faixa = calcFaixa(nc);
+  var cl = classificar(nc,au);
+  var totalAtual = d.colAtual + d.colOutros;
+  var difMedio = nc - totalAtual;
+  var pMin = faixa.min * 25;
+  var pMax = faixa.max * 25;
+  var pAtual = totalAtual * 25;
+
+  return {
+    au: +au.toFixed(1), cv: cv, iae: +iae.toFixed(2), sf: +sf.toFixed(4),
+    ica: +ica.toFixed(0), nc: nc, faixaOperacional: faixa, classificacao: cl,
+    colAtual: d.colAtual, colOutros: d.colOutros, totalAtual: totalAtual,
+    dif: difMedio, difFaixa: {min:faixa.min-totalAtual, max:faixa.max-totalAtual},
+    prodMin: pMin, prodMax: pMax, prodAtual: pAtual, prodColonia: 25,
+    diagnostico: gerarDiagnostico({cv:cv,iae:iae,sf:sf,nc:nc,cobertura:d.cobertura,numEsp:d.especies.length,dif:difMedio}),
+    raioKm: d.raioKm
+  };
+}
+
+/* ═══ TOAST ═══ */
+function showToast(msg, type, dur){
+  type = type || 'info'; dur = dur || 3000;
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, dur);
+}
+
+/* ═══ NAVIGATION ═══ */
+function updateStepper(cur){
+  var steps = document.querySelectorAll('#stepper .step');
+  var lines = document.querySelectorAll('#stepper .step-line');
+  for(var i=0; i<steps.length; i++){
+    steps[i].classList.remove('active','completed');
+    if(i < cur) steps[i].classList.add('completed');
+    if(i === cur) steps[i].classList.add('active');
+  }
+  for(var j=0; j<lines.length; j++){
+    lines[j].classList.toggle('filled', j < cur);
+  }
+}
+
+function showScreen(idx){
+  var screens = document.querySelectorAll('.screen');
+  for(var i=0; i<screens.length; i++){
+    screens[i].classList.toggle('active', i === idx);
+  }
+  updateStepper(idx);
+  document.getElementById('btnVoltar').disabled = (idx === 0);
+  document.getElementById('btnProximo').textContent = (idx === 5) ? 'Finalizar' : 'Próximo';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ═══ MAP (com try/catch) ═══ */
+function initMap(){
+  try {
+    if(typeof L === 'undefined'){
+      console.warn('Leaflet nao carregou. Mapa desabilitado.');
+      return;
+    }
+    map = L.map('mapa', {center:[-5.7945,-35.2110], zoom:10, zoomControl:false});
+    L.control.zoom({position:'bottomright'}).addTo(map);
+    tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', crossOrigin:true});
+    tileSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'© Esri', crossOrigin:true});
+    tileOSM.addTo(map);
+    map.on('click', function(e){ setPosition(e.latlng.lat, e.latlng.lng); });
+    document.getElementById('btnGPS').addEventListener('click', captureGPS);
+    document.getElementById('btnSatelite').addEventListener('click', toggleSatellite);
+    /* [FIX P15] Usar 'input' para resposta imediata ao digitar coordenadas */
+    document.getElementById('inpLat').addEventListener('input', onManualCoord);
+    document.getElementById('inpLng').addEventListener('input', onManualCoord);
+  } catch(e) {
+    console.warn('Erro ao inicializar mapa:', e);
+  }
+}
+
+function setPosition(lat,lng){
+  if(!map) return;
+  lat=parseFloat(lat); lng=parseFloat(lng);
+  if(isNaN(lat)||isNaN(lng)) return;
+  window.appState.localizacao.lat = lat;
+  window.appState.localizacao.lng = lng;
+  document.getElementById('inpLat').value = lat.toFixed(6);
+  document.getElementById('inpLng').value = lng.toFixed(6);
+  map.setView([lat,lng], 14);
+  var hiveIcon = L.divIcon({className:'hive-marker-container', html:'<div class="hive-marker-dot">🐝</div><div class="hive-marker-pin"></div>', iconSize:[32,50], iconAnchor:[16,50], popupAnchor:[0,-50]});
+  if(marker) map.removeLayer(marker);
+  var nome = window.appState.apicultor.apiario || 'Apiário';
+  marker = L.marker([lat,lng],{icon:hiveIcon}).addTo(map).bindPopup('<strong>'+nome+'</strong><br>'+lat.toFixed(6)+', '+lng.toFixed(6));
+  document.getElementById('apiaryMapName').textContent = nome;
+  drawCircle();
+}
+
+function drawCircle(){
+  if(!map) return;
+  var lat=window.appState.localizacao.lat, lng=window.appState.localizacao.lng, raio=window.appState.localizacao.raio;
+  if(!lat||!lng) return;
+  if(circle) map.removeLayer(circle);
+  circle = L.circle([lat,lng], {radius:raio*1000, color:'#7B3F1D', weight:2, opacity:0.8, fillColor:'#7B3F1D', fillOpacity:0.08, dashArray:'8,6'}).addTo(map);
+  document.getElementById('spanAreaForr').textContent = calcAU(raio).toLocaleString('pt-BR',{minimumFractionDigits:1})+' ha';
+}
+
+function captureGPS(){
+  if(!navigator.geolocation){showToast('GPS nao suportado.','error');return;}
+  showToast('Obtendo localizacao...','info',5000);
+  var btn=document.getElementById('btnGPS'); btn.disabled=true; btn.textContent='⏳...';
+  navigator.geolocation.getCurrentPosition(
+    function(p){ setPosition(p.coords.latitude,p.coords.longitude); showToast('GPS capturado!','success'); btn.disabled=false; btn.textContent='📡 GPS'; },
+    function(){ showToast('Erro no GPS.','error'); btn.disabled=false; btn.textContent='📡 GPS'; },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:60000}
+  );
+}
+
+function toggleSatellite(){
+  if(!map) return;
+  var btn=document.getElementById('btnSatelite');
+  if(isSatellite){ map.removeLayer(tileSat); tileOSM.addTo(map); btn.classList.remove('active'); btn.textContent='🛰️ Satélite'; }
+  else{ map.removeLayer(tileOSM); tileSat.addTo(map); btn.classList.add('active'); btn.textContent='🗺️ Mapa'; }
+  isSatellite=!isSatellite;
+}
+
+function onManualCoord(){
+  var lat=parseFloat(document.getElementById('inpLat').value);
+  var lng=parseFloat(document.getElementById('inpLng').value);
+  if(!isNaN(lat)&&!isNaN(lng)) setPosition(lat,lng);
+}
+
+/* ═══ COLÔNIAS ═══ */
+function initColonias(){
+  var inpA = document.getElementById('inpColAtual');
+  var inpO = document.getElementById('inpColOutros');
+  function update(){
+    var a = parseInt(inpA.value)||0;
+    var o = parseInt(inpO.value)||0;
+    /* [FIX P11] Proteção contra valores negativos */
+    a = Math.max(0, a);
+    o = Math.max(0, o);
+    window.appState.colonias = {atual:a, outros:o, total:a+o};
+    document.getElementById('totalColAtual').textContent = (a+o);
+  }
+  inpA.addEventListener('input', update);
+  inpO.addEventListener('input', update);
+  update();
+}
+
+/* ═══ SLIDERS ═══ */
+function initSliders(){
+  var ids=['cvPreservada','cvCapoeira','cvAgricultura','cvPasto'];
+  var vIds=['valPreservada','valCapoeira','valAgricultura','valPasto'];
+  function update(){
+    var t=0;
+    for(var i=0;i<ids.length;i++){
+      var v=parseInt(document.getElementById(ids[i]).value)||0;
+      t+=v; document.getElementById(vIds[i]).textContent=v+'%';
+    }
+    var bar=document.getElementById('totalBar'), fill=document.getElementById('totalFill'), txt=document.getElementById('totalText');
+    fill.style.width=Math.min(t,100)+'%'; txt.textContent='Total: '+t+'%';
+    bar.classList.remove('valid','invalid','over');
+    if(t===100) bar.classList.add('valid');
+    else if(t>100) bar.classList.add('invalid','over');
+    else bar.classList.add('invalid');
+    var pres=parseInt(document.getElementById('cvPreservada').value)||0;
+    var cap=parseInt(document.getElementById('cvCapoeira').value)||0;
+    var agri=parseInt(document.getElementById('cvAgricultura').value)||0;
+    var pasto=parseInt(document.getElementById('cvPasto').value)||0;
+    window.appState.cobertura={preservada:pres,capoeira:cap,agricultura:agri,pasto:pasto};
+    document.getElementById('cvDisplay').textContent=(pres+cap+agri)+'%';
+  }
+  for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).addEventListener('input',update);
+  update();
+}
+
+/* ═══ FLORA ═══ */
+function renderSpecies(){
+  var container=document.getElementById('speciesContainer');
+  container.innerHTML='';
+  var cats={arvore:'🌳 Árvores de Grande Porte',arbusto:'🌿 Árvores e Arbustos',exotica:'🌱 Exóticas',herbacea:'🌼 Herbáceas',cactacea:'🌵 Cactáceas',outras:'🌴 Palmeiras / Outras'};
+  var ordem=['arvore','arbusto','exotica','herbacea','cactacea','outras'];
+  for(var c=0;c<ordem.length;c++){
+    var catKey=ordem[c]; var arr=[];
+    for(var e=0;e<ESPECIES.length;e++) if(ESPECIES[e].cat===catKey) arr.push(ESPECIES[e]);
+    if(!arr.length) continue;
+    var catDiv=document.createElement('div'); catDiv.className='species-category'; catDiv.dataset.category=catKey;
+    var catTitle=document.createElement('div'); catTitle.className='species-category-title'; catTitle.textContent=cats[catKey];
+    catDiv.appendChild(catTitle);
+    var grid=document.createElement('div'); grid.className='species-grid';
+    for(var i=0;i<arr.length;i++){
+      var esp=arr[i];
+      var card=document.createElement('div');
+      card.className='species-card'; card.dataset.id=esp.id;
+      card.setAttribute('role','button'); card.setAttribute('tabindex','0');
+      card.innerHTML='<div class="species-check">✓</div><div class="species-info"><div class="species-name">'+esp.icon+' '+esp.nome+'</div><div class="species-scientific">'+esp.c+'</div></div><span class="species-iae">IAE '+esp.iae.toFixed(1)+'</span>';
+      /* [FIX P01] Removido listener 'touchend' para evitar double-fire em mobile.
+         Apenas 'click' é usado — funciona corretamente em touch desde iOS 13+ e Android Chrome 32+. */
+      (function(cardEl, espId){
+        function toggle(e){
+          e.preventDefault(); e.stopPropagation();
+          if(cardEl.classList.contains('selected')){
+            cardEl.classList.remove('selected'); delete selectedSpeciesSet[espId];
+          } else {
+            cardEl.classList.add('selected'); selectedSpeciesSet[espId]=true;
+          }
+          updateSpeciesUI();
+        }
+        cardEl.addEventListener('click', toggle);
+        cardEl.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(e); }});
+      })(card, esp.id);
+      grid.appendChild(card);
+    }
+    catDiv.appendChild(grid);
+    container.appendChild(catDiv);
+  }
+}
+
+function updateSpeciesUI(){
+  var ids=getSelectedSpecies();
+  document.getElementById('speciesCount').textContent=ids.length;
+  var iae=calcIAE(ids);
+  document.getElementById('iaeDisplay').textContent=iae.toFixed(2).replace('.',',');
+  window.appState.flora={especies:ids, iae:iae};
+}
+
+function getSelectedSpecies(){
+  var ids=[];
+  for(var k in selectedSpeciesSet) if(selectedSpeciesSet[k]) ids.push(k);
+  return ids;
+}
+
+function initSpeciesControls(){
+  document.getElementById('speciesSearch').addEventListener('input', function(){
+    var q=this.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    var cards=document.querySelectorAll('.species-card');
+    var cats=document.querySelectorAll('.species-category');
+    for(var i=0;i<cards.length;i++){
+      var n=cards[i].querySelector('.species-name').textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      var s=cards[i].querySelector('.species-scientific').textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      cards[i].classList.toggle('hidden', n.indexOf(q)===-1 && s.indexOf(q)===-1);
+    }
+    for(var j=0;j<cats.length;j++){
+      var vis=cats[j].querySelectorAll('.species-card:not(.hidden)');
+      cats[j].style.display = vis.length===0 ? 'none' : '';
+    }
+  });
+  document.getElementById('btnSelectAll').addEventListener('click', function(){
+    var c=document.querySelectorAll('.species-card:not(.hidden)');
+    for(var i=0;i<c.length;i++){ c[i].classList.add('selected'); selectedSpeciesSet[c[i].dataset.id]=true; }
+    updateSpeciesUI();
+  });
+  document.getElementById('btnDeselectAll').addEventListener('click', function(){
+    var c=document.querySelectorAll('.species-card');
+    for(var i=0;i<c.length;i++) c[i].classList.remove('selected');
+    selectedSpeciesSet={}; updateSpeciesUI();
+  });
+}
+
+/* ═══ MESES ═══ */
+function initMonths(){
+  var btns=document.querySelectorAll('#monthGrid .month-btn');
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click', function(){ this.classList.toggle('active'); updateSF(); });
+  }
+}
+function updateSF(){
+  var a=document.querySelectorAll('#monthGrid .month-btn.active'), n=a.length;
+  document.getElementById('sfValue').textContent=(n/12).toFixed(2).replace('.',',');
+  document.getElementById('sfMonths').textContent=n;
+  var m=[]; for(var i=0;i<a.length;i++) m.push(parseInt(a[i].dataset.month));
+  window.appState.sazonalidade={meses:m, sf:n/12};
+}
+function getSelectedMonths(){
+  var a=document.querySelectorAll('#monthGrid .month-btn.active'), r=[];
+  for(var i=0;i<a.length;i++) r.push(parseInt(a[i].dataset.month));
+  return r;
+}
+
+/* ═══ VALIDATIONS ═══ */
+function validateScreen(idx){
+  var fe=document.querySelectorAll('.field-error'); for(var i=0;i<fe.length;i++) fe[i].textContent='';
+  var ei=document.querySelectorAll('input.error'); for(var j=0;j<ei.length;j++) ei[j].classList.remove('error');
+  var vm=document.querySelectorAll('.validation-msg'); for(var k=0;k<vm.length;k++) vm[k].classList.remove('show','error','success');
+
+  if(idx===0){
+    var ok=true;
+    var n=document.getElementById('inpNome');
+    var a=document.getElementById('inpApiario');
+    var p=document.getElementById('inpPropriedade');
+    var m=document.getElementById('inpMunicipio');
+    var u=document.getElementById('inpUF');
+    if(!n.value.trim()){ n.classList.add('error'); document.getElementById('errNome').textContent='Obrigatório'; ok=false; }
+    if(!a.value.trim()){ a.classList.add('error'); document.getElementById('errApiario').textContent='Obrigatório'; ok=false; }
+    if(!p.value.trim()){ p.classList.add('error'); document.getElementById('errPropriedade').textContent='Obrigatório'; ok=false; }
+    if(!m.value.trim()){ m.classList.add('error'); document.getElementById('errMunicipio').textContent='Obrigatório'; ok=false; }
+    if(!u.value.trim() || u.value.trim().length!==2){ u.classList.add('error'); document.getElementById('errUF').textContent='UF: 2 letras'; ok=false; }
+    if(ok){
+      window.appState.apicultor = {
+        nome:n.value.trim(), apiario:a.value.trim(), propriedade:p.value.trim(),
+        comunidade:document.getElementById('inpComunidade').value.trim(),
+        municipio:m.value.trim(), uf:u.value.trim().toUpperCase(),
+        area:parseFloat(document.getElementById('inpArea').value)||null
+      };
+    }
+    return ok;
+  }
+  if(idx===1){
+    var ca=Math.max(0, parseInt(document.getElementById('inpColAtual').value)||0); /* [FIX P11] */
+    var co=Math.max(0, parseInt(document.getElementById('inpColOutros').value)||0); /* [FIX P11] */
+    window.appState.colonias={atual:ca,outros:co,total:ca+co};
+    return true;
+  }
+  if(idx===2){
+    var c=window.appState.cobertura, t=c.preservada+c.capoeira+c.agricultura+c.pasto;
+    if(t!==100){
+      var msg=document.getElementById('msgCobertura');
+      msg.textContent='⚠ Total deve ser 100%. Atual: '+t+'%';
+      msg.classList.add('show','error');
+      return false;
+    }
+    return true;
+  }
+  if(idx===3){
+    var sel=getSelectedSpecies();
+    if(sel.length<1){
+      var m2=document.getElementById('msgFlora');
+      m2.textContent='⚠ Selecione pelo menos 1 espécie.';
+      m2.classList.add('show','error');
+      return false;
+    }
+    window.appState.flora={especies:sel, iae:calcIAE(sel)};
+    return true;
+  }
+  if(idx===4){
+    var ms=getSelectedMonths();
+    if(ms.length<1){
+      var m3=document.getElementById('msgSazonal');
+      m3.textContent='⚠ Selecione pelo menos 1 mês.';
+      m3.classList.add('show','error');
+      return false;
+    }
+    window.appState.sazonalidade={meses:ms, sf:calcSF(ms)};
+    return true;
+  }
+  return true;
+}
+
+/* ═══ RENDER RESULTADO ═══ */
+function renderResultado(r){
+  document.getElementById('resultDate').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('gaugeNC').textContent = r.nc.toLocaleString('pt-BR');
+  var dens = r.au>0 ? r.nc/r.au : 0;
+  var fillPct = Math.min(dens/0.5, 1);
+  var circ = 2*Math.PI*52;
+  document.getElementById('gaugeFill').style.strokeDashoffset = circ - (fillPct*circ);
+  var cm = {excelente:'#2D7D46',boa:'#6AAF35',moderada:'#D4A017',baixa:'#D4880F','muito-baixa':'#B33A2B','sem-dados':'#999'};
+  var cor = cm[r.classificacao.nivel] || '#7B3F1D';
+  document.getElementById('gaugeFill').style.stroke = cor;
+  var gc = document.getElementById('gaugeClass');
+  gc.textContent = r.classificacao.texto;
+  gc.style.background = cor+'22';
+  gc.style.color = cor;
+  document.getElementById('metICA').textContent = r.ica.toLocaleString('pt-BR');
+  document.getElementById('metCapOp').textContent = r.faixaOperacional.min.toLocaleString('pt-BR')+' – '+r.faixaOperacional.max.toLocaleString('pt-BR');
+  document.getElementById('metProducao').textContent = r.prodMin.toLocaleString('pt-BR')+' – '+r.prodMax.toLocaleString('pt-BR')+' kg';
+  document.getElementById('metArea').textContent = r.au.toLocaleString('pt-BR',{minimumFractionDigits:1})+' ha';
+  document.getElementById('resAU').textContent = r.au.toLocaleString('pt-BR',{minimumFractionDigits:1})+' ha';
+  document.getElementById('resCV').textContent = r.cv+'%';
+  document.getElementById('resIAE').textContent = r.iae.toFixed(2);
+  document.getElementById('resSF').textContent = r.sf.toFixed(2);
+  document.getElementById('resICA').textContent = r.ica.toLocaleString('pt-BR');
+  document.getElementById('resNC').textContent = r.nc+' colônias';
+
+  // Capacity Analysis
+  var html = '';
+  html += '<div class="cap-row"><span class="cap-row-label">🏠 Suas colônias atuais</span><span class="cap-row-value">'+r.colAtual+'</span></div>';
+  html += '<div class="cap-row"><span class="cap-row-label">🏘️ Outros apiários no raio</span><span class="cap-row-value">'+r.colOutros+'</span></div>';
+  html += '<div class="cap-row" style="font-weight:600"><span class="cap-row-label">📊 Total atual na área</span><span class="cap-row-value" style="font-size:1.1rem">'+r.totalAtual+' colônias</span></div>';
+  html += '<div class="cap-divider"></div>';
+  html += '<div class="cap-row"><span class="cap-row-label">📐 Capacidade máxima (NC)</span><span class="cap-row-value">'+r.nc+' colônias</span></div>';
+  html += '<div class="cap-row"><span class="cap-row-label">📈 Faixa recomendada</span><span class="cap-row-value">'+r.faixaOperacional.min+' – '+r.faixaOperacional.max+' colônias</span></div>';
+  html += '<div class="cap-divider"></div>';
+
+  var vc, vi, vt;
+  if(r.totalAtual===0){ vc='neutral'; vi='📋'; vt='Informe as colônias atuais para análise de capacidade.'; }
+  else if(r.totalAtual <= r.faixaOperacional.min){ vc='positive'; vi='✅'; vt='Área com capacidade disponível. Pode adicionar até <strong>'+(r.faixaOperacional.max-r.totalAtual)+'</strong> colônia(s).'; }
+  else if(r.totalAtual <= r.faixaOperacional.max){ vc='positive'; vi='✅'; vt='Dentro da faixa recomendada. Ainda pode adicionar até <strong>'+(r.faixaOperacional.max-r.totalAtual)+'</strong> colônia(s).'; }
+  else if(r.totalAtual <= r.nc){ vc='neutral'; vi='⚠️'; vt='Acima da faixa recomendada (+'+Math.abs(r.difFaixa.max)+' colônias). Sustentabilidade pode ser comprometida.'; }
+  else{ vc='negative'; vi='🔴'; vt='Área sobrelotada! Redistribuir pelo menos <strong>'+(r.totalAtual-r.nc)+'</strong> colônia(s).'; }
+  html += '<div class="cap-verdict '+vc+'"><span class="cap-verdict-icon">'+vi+'</span>'+vt+'</div>';
+  html += '<div class="cap-divider"></div>';
+  html += '<div class="cap-row"><span class="cap-row-label">🍯 Produção estimada (faixa)</span><span class="cap-row-value">'+r.prodMin.toLocaleString('pt-BR')+' – '+r.prodMax.toLocaleString('pt-BR')+' kg/ano</span></div>';
+  html += '<div class="cap-row"><span class="cap-row-label">🍯 Com colônias atuais ('+r.totalAtual+')</span><span class="cap-row-value">'+r.prodAtual.toLocaleString('pt-BR')+' kg/ano</span></div>';
+  document.getElementById('capBody').innerHTML = html;
+
+  // Diagnosis
+  var ul = document.createElement('ul');
+  for(var d=0; d<r.diagnostico.length; d++){ var li=document.createElement('li'); li.textContent=r.diagnostico[d]; ul.appendChild(li); }
+  document.getElementById('diagnosisContent').innerHTML='';
+  document.getElementById('diagnosisContent').appendChild(ul);
+}
+
+/* ═══ WHATSAPP ═══ */
+function compartilharWhatsApp(r){
+  var ap=window.appState.apicultor, loc=window.appState.localizacao, cob=window.appState.cobertura;
+  var mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var ma=window.appState.sazonalidade.meses||[], mf=[];
+  for(var i=0;i<ma.length;i++) mf.push(mn[ma[i]]);
+  var ea=window.appState.flora.especies||[], en=[];
+  for(var j=0;j<ea.length;j++){
+    var f=null;
+    for(var k=0;k<ESPECIES.length;k++){ if(ESPECIES[k].id===ea[j]){ f=ESPECIES[k]; break; } }
+    en.push(f ? f.nome+' ('+f.iae.toFixed(1)+')' : ea[j]);
+  }
+  var co=(loc.lat&&loc.lng) ? loc.lat.toFixed(6)+', '+loc.lng.toFixed(6) : 'Nao informado';
+  var dt=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var ver;
+  if(r.totalAtual===0) ver='Informe as colonias atuais.';
+  else if(r.totalAtual<=r.faixaOperacional.max) ver='Pode adicionar ate '+(r.faixaOperacional.max-r.totalAtual)+' colonia(s).';
+  else ver='Sobrelotada. Redistribuir '+(r.totalAtual-r.nc)+' colonia(s).';
+
+  var t='';
+  t += 'RELATORIO DE CAPACIDADE APICOLA\nCaatinga - Modelo EMBRAPA\n';
+  t += '================================\n\n';
+  t += 'APICULTOR\n';
+  t += '- Nome: '+(ap.nome||'-')+'\n- Apiario: '+(ap.apiario||'-')+'\n';
+  t += '- Propriedade: '+(ap.propriedade||'-')+'\n';
+  if(ap.comunidade) t += '- Comunidade: '+ap.comunidade+'\n';
+  t += '- Municipio/UF: '+(ap.municipio||'-')+'/'+(ap.uf||'-')+'\n\n';
+  t += 'LOCALIZACAO\n- GPS: '+co+'\n- Raio: '+r.raioKm+' km\n- AU: '+r.au+' ha\n\n';
+  t += 'COLONIAS\n- Seu apiario: '+r.colAtual+'\n- Outros no raio: '+r.colOutros+'\n';
+  t += '- Total atual: '+r.totalAtual+' colonias\n\n';
+  t += 'COBERTURA: CV='+r.cv+'% | IAE: '+r.iae+' | SF: '+r.sf.toFixed(2)+'\n\n';
+  t += 'RESULTADOS\n- ICA: '+r.ica.toLocaleString('pt-BR')+'\n';
+  t += '- Capacidade maxima: '+r.nc+' colonias\n';
+  t += '- Faixa: '+r.faixaOperacional.min+'-'+r.faixaOperacional.max+'\n';
+  t += '- Producao: '+r.prodMin.toLocaleString('pt-BR')+'-'+r.prodMax.toLocaleString('pt-BR')+' kg/ano\n';
+  t += '- Com colonias atuais: '+r.prodAtual.toLocaleString('pt-BR')+' kg/ano\n\n';
+  t += 'ANALISE: '+ver+'\n\nDIAGNOSTICO\n';
+  for(var d=0;d<r.diagnostico.length;d++) t += '- '+r.diagnostico[d]+'\n';
+  /* [FIX P02] Créditos de autoria no relatório WhatsApp */
+  t += '\n================================\n'+dt+'\nEMBRAPA Semiarido\n';
+  t += '© Camara Neto; F.G. — Eng. Agronomo, Desenvolvedor Web.\n';
+  t += 'Todos os direitos reservados.\n';
+  window.open('https://wa.me/?text='+encodeURIComponent(t), '_blank');
+}
+
+/* ═══ PDF ═══ */
+async function gerarPDF(r){
+  if(typeof window.jspdf==='undefined'){ showToast('jsPDF nao carregado.','error'); return; }
+  var jsPDF=window.jspdf.jsPDF;
+  var ap=window.appState.apicultor, loc=window.appState.localizacao, cob=window.appState.cobertura;
+  var doc=new jsPDF('p','mm','a4'), pw=210, ml=15, mr=15, cw=pw-ml-mr, y=0;
+  var cP=[123,63,29], cPD=[92,46,20], cA=[212,160,23], cT=[42,26,14], cM=[154,139,122], cBg=[246,241,233], cS=[45,125,70], cR=[179,58,43];
+  var dt=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  function sf(st,sz){ doc.setFont('helvetica',st); doc.setFontSize(sz); }
+  function ln(x1,yy,x2,c,w){ w=w||0.3; doc.setDrawColor(c[0],c[1],c[2]); doc.setLineWidth(w); doc.line(x1,yy,x2,yy); }
+  function chk(n){ if(y+n>272){ doc.addPage(); y=20; } }
+  /* [FIX P02] Função para rodapé com créditos em todas as páginas */
+  function drawFooter(){
+    var fy=282;
+    ln(ml,fy-4,ml+cw,cM,0.3);
+    sf('normal',7); doc.setTextColor(cM[0],cM[1],cM[2]);
+    doc.text('Capacidade Apicola Caatinga - EMBRAPA Semiarido',ml,fy);
+    doc.text(dt,pw-mr,fy,{align:'right'});
+    sf('italic',6);
+    doc.text('\u00A9 Camara Neto; F.G. \u2014 Eng. Agronomo, Desenvolvedor Web. Todos os direitos reservados.',ml,fy+5);
+    if(ap.nome){ doc.text('Apicultor: '+ap.nome+' | Apiario: '+(ap.apiario||'-'),ml,fy+10); }
+  }
+
+  // Header
+  doc.setFillColor(cP[0],cP[1],cP[2]); doc.rect(0,0,pw,42,'F');
+  sf('bold',18); doc.setTextColor(255,255,255); doc.text('Capacidade Apicola - Caatinga',ml,18);
+  sf('normal',9); doc.setTextColor(240,220,190); doc.text('Modelo EMBRAPA | '+dt,ml,26);
+  sf('bold',8); doc.setTextColor(cA[0],cA[1],cA[2]); doc.text('EMBRAPA SEMIARIDO',pw-mr,18,{align:'right'});
+  y=50;
+
+  // 1. Apicultor
+  sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('1. Dados do Apicultor',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=8;
+  var rows=[['Nome',ap.nome||'-'],['Apiario',ap.apiario||'-'],['Propriedade',ap.propriedade||'-'],['Comunidade',ap.comunidade||'-'],['Municipio/UF',(ap.municipio||'-')+'/'+(ap.uf||'-')]];
+  for(var i=0;i<rows.length;i++){ chk(7); if(i%2===0){doc.setFillColor(cBg[0],cBg[1],cBg[2]);doc.rect(ml,y-4,cw,7,'F');} sf('normal',8);doc.setTextColor(cM[0],cM[1],cM[2]);doc.text(rows[i][0],ml+3,y); sf('normal',9);doc.setTextColor(cT[0],cT[1],cT[2]);doc.text(rows[i][1],ml+55,y); y+=7; }
+  y+=6;
+
+  // 2. Mapa
+  chk(80); sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('2. Mapa',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=8;
+  /* [FIX P05] Aguardar tiles carregarem antes de capturar + fallback melhorado */
+  try{
+    var mapEl=document.getElementById('mapa');
+    if(mapEl&&typeof html2canvas!=='undefined'){
+      /* Aguarda 1.5s para garantir que os tiles do mapa estejam carregados */
+      await new Promise(function(resolve){ setTimeout(resolve, 1500); });
+      var cv=await html2canvas(mapEl,{
+        useCORS: true,
+        allowTaint: false,
+        scale: 2,
+        logging: false,
+        removeContainer: true,
+        backgroundColor: '#EDE6D8'
+      });
+      var img=cv.toDataURL('image/jpeg',0.85);
+      var iw=cw, ih=(cv.height/cv.width)*iw, fh=Math.min(ih,65);
+      chk(fh+10);
+      doc.addImage(img,'JPEG',ml,y,iw,fh);
+      doc.setDrawColor(cP[0],cP[1],cP[2]); doc.setLineWidth(0.4); doc.rect(ml,y,iw,fh);
+      y+=fh+4;
+    }
+  } catch(e){
+    console.warn('Mapa nao capturado para PDF:', e);
+    /* [FIX P05] Fallback melhorado: caixa estilizada com informações do mapa */
+    doc.setFillColor(cBg[0],cBg[1],cBg[2]);
+    doc.roundedRect(ml, y, cw, 28, 3, 3, 'F');
+    doc.setDrawColor(cP[0],cP[1],cP[2]); doc.setLineWidth(0.4);
+    doc.roundedRect(ml, y, cw, 28, 3, 3, 'S');
+    sf('bold',10); doc.setTextColor(cPD[0],cPD[1],cPD[2]);
+    doc.text('Mapa do Apiario', ml+cw/2, y+9, {align:'center'});
+    sf('normal',8); doc.setTextColor(cT[0],cT[1],cT[2]);
+    var gpsTxt = (loc.lat&&loc.lng) ? loc.lat.toFixed(6)+', '+loc.lng.toFixed(6) : 'Nao informado';
+    doc.text('GPS: '+gpsTxt, ml+cw/2, y+17, {align:'center'});
+    doc.text('Raio: '+r.raioKm+' km | AU: '+r.au+' ha', ml+cw/2, y+24, {align:'center'});
+    y+=34;
+  }
+  y+=2; sf('normal',9); doc.setTextColor(cT[0],cT[1],cT[2]); doc.text('GPS: '+(loc.lat&&loc.lng?loc.lat.toFixed(6)+', '+loc.lng.toFixed(6):'Nao informado')+' | Raio: '+r.raioKm+' km',ml,y); y+=10;
+  drawFooter(); /* [FIX P02] */
+
+  // 3. Colonias
+  chk(30); sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('3. Colonias na Area',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=8;
+  var cRows=[['Seu apiario',r.colAtual+' colonias'],['Outros no raio',r.colOutros+' colonias'],['Total atual',r.totalAtual+' colonias']];
+  for(var ci=0;ci<cRows.length;ci++){ chk(7); if(ci%2===0){doc.setFillColor(cBg[0],cBg[1],cBg[2]);doc.rect(ml,y-4,cw,7,'F');} sf('normal',9);doc.setTextColor(cT[0],cT[1],cT[2]);doc.text(cRows[ci][0],ml+3,y); sf('bold',9);doc.setTextColor(cPD[0],cPD[1],cPD[2]);doc.text(cRows[ci][1],ml+cw-3,y,{align:'right'}); y+=7; }
+  y+=10;
+
+  // 4. Cobertura
+  chk(40); sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('4. Cobertura Vegetal',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=8;
+  var cobRows=[['Caatinga Preservada',cob.preservada+'%'],['Capoeira',cob.capoeira+'%'],['Agricultura',cob.agricultura+'%'],['Pastagem (excluida)',cob.pasto+'%']];
+  for(var cbi=0;cbi<cobRows.length;cbi++){ chk(7); if(cbi%2===0){doc.setFillColor(cBg[0],cBg[1],cBg[2]);doc.rect(ml,y-4,cw,7,'F');} sf('normal',9);doc.setTextColor(cT[0],cT[1],cT[2]);doc.text(cobRows[cbi][0],ml+3,y); doc.text(cobRows[cbi][1],ml+cw-3,y,{align:'right'}); y+=7; }
+  y+=4; sf('bold',9); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('CV apicola = '+r.cv+'%',ml,y); y+=10;
+  drawFooter(); /* [FIX P02] */
+
+  // 5. Params + Results (new page)
+  doc.addPage(); y=20;
+  sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('5. Parametros e Resultados',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=10;
+  var pRows=[['AU',r.au+' ha'],['CV',r.cv+'%'],['IAE',r.iae.toFixed(2)],['SF',r.sf.toFixed(2)],['ICA',r.ica.toLocaleString('pt-BR')],['NC (ICA/8)',r.nc+' colonias'],['Faixa (70-85%)',r.faixaOperacional.min+' - '+r.faixaOperacional.max],['Producao',r.prodMin.toLocaleString('pt-BR')+' - '+r.prodMax.toLocaleString('pt-BR')+' kg/ano']];
+  for(var pi=0;pi<pRows.length;pi++){ chk(8); if(pi%2===0){doc.setFillColor(cBg[0],cBg[1],cBg[2]);doc.rect(ml,y-4,cw,7,'F');} sf('normal',9);doc.setTextColor(cT[0],cT[1],cT[2]);doc.text(pRows[pi][0],ml+3,y); sf('bold',9);doc.setTextColor(cPD[0],cPD[1],cPD[2]);doc.text(pRows[pi][1],ml+cw-3,y,{align:'right'}); y+=7; }
+  y+=10;
+
+  // 6. Analise
+  chk(30); sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('6. Analise de Capacidade',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=10;
+  var veredicto, verCor;
+  if(r.totalAtual===0){veredicto='Informe as colonias atuais.';verCor=cM;}
+  else if(r.totalAtual<=r.faixaOperacional.max){veredicto='Pode adicionar ate '+(r.faixaOperacional.max-r.totalAtual)+' colonia(s).';verCor=cS;}
+  else{veredicto='Sobrelotada. Redistribuir '+(r.totalAtual-r.nc)+' colonia(s).';verCor=cR;}
+  chk(20); doc.setFillColor(verCor[0],verCor[1],verCor[2]); doc.roundedRect(ml,y,cw,16,3,3,'F'); sf('bold',10); doc.setTextColor(255,255,255); doc.text(veredicto,ml+cw/2,y+10,{align:'center'}); y+=24;
+
+  // Boxes
+  chk(36); var bw=(cw-10)/3;
+  var boxes=[{l:'NC Max',v:r.nc.toString(),s:'teorica'},{l:'Faixa Oper.',v:r.faixaOperacional.min+'-'+r.faixaOperacional.max,s:'70-85%'},{l:'Producao',v:r.prodMin.toLocaleString('pt-BR')+'-'+r.prodMax.toLocaleString('pt-BR')+' kg',s:'25 kg/col.'}];
+  for(var bi=0;bi<boxes.length;bi++){ var bx=ml+bi*(bw+5); var bc=bi===2?cA:cP; doc.setFillColor(bc[0],bc[1],bc[2]); doc.roundedRect(bx,y,bw,28,3,3,'F'); sf('bold',12); doc.setTextColor(255,255,255); doc.text(boxes[bi].v,bx+bw/2,y+12,{align:'center'}); sf('normal',7); doc.setTextColor(240,230,215); doc.text(boxes[bi].l,bx+bw/2,y+19,{align:'center'}); doc.text(boxes[bi].s,bx+bw/2,y+24,{align:'center'}); }
+  y+=38;
+
+  // 7. Diagnostico
+  chk(40); sf('bold',12); doc.setTextColor(cPD[0],cPD[1],cPD[2]); doc.text('7. Diagnostico',ml,y); y+=2; ln(ml,y,ml+cw,cP,0.5); y+=8;
+  for(var di=0;di<r.diagnostico.length;di++){ chk(12); sf('normal',8.5); doc.setTextColor(cT[0],cT[1],cT[2]); var lines=doc.splitTextToSize(r.diagnostico[di],cw-10); for(var li=0;li<lines.length;li++){ chk(5); if(li===0){doc.setTextColor(cA[0],cA[1],cA[2]);doc.text('>',ml+2,y);doc.setTextColor(cT[0],cT[1],cT[2]);doc.text(lines[li],ml+8,y);}else doc.text(lines[li],ml+8,y); y+=4.5; } y+=2; }
+
+  /* [FIX P02] Rodapé final com créditos completos */
+  drawFooter();
+
+  doc.save('Relatorio_Apicola_'+(ap.nome||'Relatorio').replace(/[^a-zA-Z0-9]/g,'_').substring(0,40)+'.pdf');
+}
+
+/* ═══ EXPORT ═══ */
+function initExport(){
+  document.getElementById('btnWhatsApp').addEventListener('click', function(){
+    if(!window.resultadoAtual){ showToast('Calcule primeiro.','error'); return; }
+    compartilharWhatsApp(window.resultadoAtual);
+  });
+  document.getElementById('btnPDF').addEventListener('click', async function(){
+    if(!window.resultadoAtual){ showToast('Calcule primeiro.','error'); return; }
+    showToast('Gerando PDF...','info',2000);
+    try{ await gerarPDF(window.resultadoAtual); showToast('PDF gerado!','success'); }
+    catch(e){ console.error(e); showToast('Erro no PDF.','error'); }
+  });
+}
+
+/* ═══ CALC ═══ */
+function performCalc(){
+  var c = window.appState.colonias;
+  var r = calcular({
+    cobertura: window.appState.cobertura,
+    especies: window.appState.flora.especies,
+    meses: window.appState.sazonalidade.meses,
+    raioKm: window.appState.localizacao.raio,
+    colAtual: c.atual,
+    colOutros: c.outros
+  });
+  window.resultadoAtual = r;
+  renderResultado(r);
+}
+
+/* ═══ NAV BUTTONS ═══ */
+function initNav(){
+  document.getElementById('btnVoltar').addEventListener('click', function(){
+    if(window.appState.currentScreen > 0){
+      window.appState.currentScreen--;
+      showScreen(window.appState.currentScreen);
+      if(window.appState.currentScreen===1 && map) setTimeout(function(){ map.invalidateSize(); }, 300);
+    }
+  });
+  document.getElementById('btnProximo').addEventListener('click', function(){
+    var cur = window.appState.currentScreen;
+    if(!validateScreen(cur)) return;
+    if(cur < 5){
+      window.appState.currentScreen++;
+      showScreen(window.appState.currentScreen);
+      if(window.appState.currentScreen===1 && map) setTimeout(function(){ map.invalidateSize(); }, 300);
+      if(window.appState.currentScreen===5) performCalc();
+    }
+  });
+}
+
+/* ═══ MISC ═══ */
+function initRaio(){
+  var radios = document.querySelectorAll('input[name="raio"]');
+  for(var i=0;i<radios.length;i++){
+    radios[i].addEventListener('change', function(){
+      window.appState.localizacao.raio = parseFloat(this.value);
+      drawCircle();
+    });
+  }
+}
+function initUF(){
+  document.getElementById('inpUF').addEventListener('input', function(){
+    this.value = this.value.toUpperCase().replace(/[^A-Z]/g,'');
+  });
+}
+function initApiarioSync(){
+  document.getElementById('inpApiario').addEventListener('input', function(){
+    var n = this.value.trim() || 'Apiário';
+    document.getElementById('apiaryMapName').textContent = n;
+    window.appState.apicultor.apiario = this.value.trim();
+    if(marker){ var ll=marker.getLatLng(); marker.setPopupContent('<strong>'+n+'</strong><br>'+ll.lat.toFixed(6)+', '+ll.lng.toFixed(6)); }
+  });
+}
+
+/* ═══ SERVICE WORKER REGISTRATION [FIX P04] ═══ */
+function initServiceWorker(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      console.log('Service Worker registrado:', reg.scope);
+    }).catch(function(err){
+      console.warn('Falha ao registrar Service Worker:', err);
+    });
+  }
+}
+
+/* ═══ INIT ═══ */
+document.addEventListener('DOMContentLoaded', function(){
+  console.log('Inicializando...');
+  initNav();
+  initSliders();
+  initColonias();
+  initUF();
+  initApiarioSync();
+  initRaio();
+  renderSpecies();
+  initSpeciesControls();
+  initMonths();
+  initInit();
+  initMap();
+  initServiceWorker(); /* [FIX P04] */
+  showScreen(0);
+  console.log('✅ App carregado — '+ESPECIES.length+' espécies.');
+});
+
+function initInit(){
+  initExport();
+}
+
+} catch(globalError) {
+  console.error('ERRO GLOBAL:', globalError);
+  document.getElementById('btnProximo').addEventListener('click', function(){
+    alert('Erro no aplicativo. Verifique o console (F12).');
+  });
+}
+</script>
+</body>
+</html>
